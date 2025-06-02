@@ -156,8 +156,16 @@ public class OptWin {
         clearBox.setHint("How many different weapon clears you need to win the world.");
         clearBox.setEnabled(true);
         sakeBox.setSlide(0, 23, 0);
-        sakeBox.setHint("How many different keepsake unlocks are needed to win the world");
+        sakeBox.setHint("How many different keepsake unlocks are needed to win the world.");
         sakeBox.setEnabled(true);
+        listBox.setSlide(0, 35, 0);
+        listBox.setHint("How many different Fated List completions are needed to win the world.");
+        listBox.setEnabled(true);
+        hotBox.setDrop(new String[] {"Reverse Heat", "Minimal Heat", "Vanilla Heat"});
+        hotBox.setHint("Reverse Heat: you start with heat pacts that cannot be disabled until you get the corresponding pact item.\n" +
+                "Minimal Heat: Pact settings determine your minimum heat. Heat cannot go below that level.\n" +
+                "Vanilla Heat: Opt out of the other 2 heat systems (disables pact settings.)");
+        hotBox.setEnabled(true);
     }
 
     private Action onLocationSystemSelected(OptBox locBox, OptBox scoreBox){
