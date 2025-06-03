@@ -4,51 +4,43 @@ This class keeps a large portion of my terrible code out of the main class.
 Basically just has instructions to build every window that the main class can show so they don't have to live there.
  */
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.event.ActionEvent;
 import java.beans.PropertyChangeListener;
 
 
-public class OptWin {
+public class OptWin extends OptionBoxes {
     private static final String VERSION = "v0.1 for Polycosmos 0.13.1"; //Version info
 
     //Window IDS
     public static final int MAIN = 0;
 
     //Window Sizes
-    private static final int MAIN_WIDTH = 500;
-    private static final int MAIN_HEIGHT = 500;
+    private static final int MAIN_WIDTH = 700;
+    private static final int MAIN_HEIGHT = 900;
 
-    //User input values
-    private String name = "Player";
-    private String desc = "";
-    private int bal = 50;
+    //Class objects these are jank because I made this as an object class but then changed it to static
+    //during development.
 
+    private static JFrame frame;
 
-    //Class objects
-    private JFrame frame;
-
-    /**
-     * Makes a JFrame and populates it with appropriate options based on ID
-     * @param id ID of desired frame, use magic constant.
-     */
-    public OptWin(int id){
-        makeFrame(id);
-    }
-    public JFrame getFrame(){
-        return frame;
-    }
-    private void makeFrame(int id){
+    public static JFrame getFrame(){
         //initialize an empty frame
         frame = setUpFrame();
         //Configure empty frame with parameters based on ID
-        if(id == 0) mainFrame();
+        mainFrame();
+        return frame;
+    }
+    private static void makeFrame(int id){
+
     }
 
     /**
      * Generates a template frame
      * @return Empty JFrame with properties shared by all frames used
      */
-    private JFrame setUpFrame(){
+    private static JFrame setUpFrame(){
         JFrame empty = new JFrame();
         empty.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         empty.setResizable(false);
@@ -56,50 +48,21 @@ public class OptWin {
         return empty;
     }
 
-    private void mainFrame(){
+    private static void mainFrame(){
         frame.setTitle("Hades YAML Generator " + VERSION);
         frame.setSize(MAIN_WIDTH, MAIN_HEIGHT);
 
         Box vBox1 = Box.createVerticalBox();
 
-        //option boxes
-        OptBox nameBox = new OptBox("Name", OptBox.TEXT_FIELD); //slot name
-        OptBox descBox = new OptBox("Description", OptBox.TEXT_FIELD); //YAML description
-        OptBox balBox = new OptBox("Progression Balancing", OptBox.SLIDER); //Progression Balancing
-        OptBox accBox = new OptBox("Accessibility", OptBox.DROP_DOWN); //Accessibility
-//        Box invBox = Box.createVerticalBox(); //Starting inventory NOT YET IMPLEMENTED
-//        Box exLocBox = Box.createHorizontalBox(); //Excluded Locations NOT YET IMPLEMENTED
-        OptBox startBox = new OptBox("Starting Weapon", OptBox.DROP_DOWN); //Starting Weapon
-        OptBox locBox = new OptBox("Location System", OptBox.DROP_DOWN); //Location type
-        OptBox scoreBox = new OptBox("Score Amount",OptBox.SLIDER); //Score options
-        Box saneBox = Box.createVerticalBox(); //Sanity options
-            OptBox saneHeadBox = new OptBox("Sanity", OptBox.GENERIC);
-            OptBox keepBox = new OptBox ("Keepsakesanity", OptBox.TOGGLE); //Keepsakes
-            OptBox weapBox = new OptBox ("Weaponsanity", OptBox.TOGGLE); //Weapons
-            OptBox aspBox = new OptBox("Hidden Aspectsanity", OptBox.TOGGLE); //Weapon aspects
-            OptBox shopBox = new OptBox("Storesanity", OptBox.TOGGLE); //Contractor shop
-            OptBox fateBox = new OptBox("Fatesanity", OptBox.TOGGLE); //Fated list of prophecies
-        OptBox hellBox = new OptBox("Required Hades Defeats", OptBox.SLIDER); //Needed Hades Defeats
-        OptBox clearBox = new OptBox("Required Weapon Clears", OptBox.SLIDER); //Needed Weapon Clears
-        OptBox sakeBox = new OptBox("Required Keepsakes", OptBox.SLIDER); //needed Keepsakes
-        OptBox listBox = new OptBox("Required Fated List Items", OptBox.SLIDER); //Needed Fated List Items
-        OptBox hotBox = new OptBox("Heat System", OptBox.DROP_DOWN); //Heat System
-        Box pactBox = Box.createHorizontalBox(); //Pact Amounts
-        Box packBox = Box.createHorizontalBox(); //Pack Values
-        Box fillBox = Box.createHorizontalBox(); //Filler items
-        Box otpBox = Box.createVerticalBox(); //Other Options
-            Box revEmBox = Box.createHorizontalBox(); //Reverse Extreme Measures Order
-            Box greekBox = Box.createHorizontalBox(); //Death Link Amnesty for Greece Deaths
-            Box hintBox = Box.createHorizontalBox(); //Store items say what they are
-            Box roomBox = Box.createHorizontalBox(); //Defeating Hades clears all rooms
-
-        //Box Config
-        nameBox.setText("Player");
-        nameBox.setHint("Slot name for this game, can be anything");
+        //Box Config: Filling in info and setting default values.
+        nameBox.setText("Player{PLAYER}");
+        nameBox.randBox.setEnabled(false);
+        nameBox.setHint("Slot name for this game, can be anything, limit 16 characters.");
         nameBox.setEnabled(true);
         descBox.setText("Generated with Devini15's Polycosmos YAML generator");
         descBox.setHint("Can help if generating multiple YAML files");
         descBox.setEnabled(true);
+        descBox.randBox.setEnabled(false);
         balBox.setSlide(0, 99, 50);
         balBox.setHint("How early in the multiworld required items are.\n" +
                 "The higher the number the less frequently you'll get stuck\nDisabled = 0, Normal = 50");
@@ -116,9 +79,9 @@ public class OptWin {
         locBox.setHint("Rooms: Every new room depth reached is a check.\n" +
                 "Score: Checks are based on a score system, points awarded for new and repeated rooms\n" +
                 "Rooms & Weapons: Like \"Rooms\" but each weapon has it's own check for each room.");
-        locBox.optDown.setAction(onLocationSystemSelected(locBox, scoreBox));
+        locBox.optDown.setAction(onLocationSystemSelected());
         locBox.setEnabled(true);
-        scoreBox.setSlide(72, 150, 1000);
+        scoreBox.setSlide(72, 1000, 150);
         scoreBox.setHint("This sets how many checks are available based on the score.\n" +
                 "Each room gives its \"depth\" in score when completed, and each check needs 1 more\n" +
                 "point to be unlocked (so check 10 needs 10 points, which can be obtained, for example,\n" +
@@ -126,7 +89,9 @@ public class OptWin {
                 "clearing room 6 with a score of 17 and a high score of 19 would grant a check and leave you\n" +
                 "with 3 points and a high score of 20.");
         scoreBox.setEnabled(false); //False by default until Score is selected as the location system
-        saneHeadBox.setHint("Additional Checks & Items");
+        saneBox.setHint("Additional Checks & Items");
+        saneBox.randBox.setAction(onSanityRandomizationBoxClicked());
+        saneBox.randBox.setEnabled(true);
         keepBox.setToggle(true);
         keepBox.setHint("Shuffles keepsakes into the item pool and makes each keepsake location a check.\n" +
                 "For simplicity, this does not affect Hades or Persephone");
@@ -166,9 +131,122 @@ public class OptWin {
                 "Minimal Heat: Pact settings determine your minimum heat. Heat cannot go below that level.\n" +
                 "Vanilla Heat: Opt out of the other 2 heat systems (disables pact settings.)");
         hotBox.setEnabled(true);
+        helpBox.setSlide(0, 100, 0);
+        helpBox.setHint("Percentage of filler items in the pool that will be \"Helper Items\".\n" +
+                "Helpers give a boost to your Max Health, Initial Money, or chance of obtaining rare Boons.");
+        helpBox.setEnabled(true);
+        trapBox.setSlide(0, 100, 10);
+        trapBox.setHint("Percentage of filler items in the pool that will be \"Traps\".\n" +
+                "Traps diminish your money or health during a run.");
+        trapBox.setEnabled(true);
+        revEmBox.setToggle(true);
+        revEmBox.setHint("Reveres the order in which extreme measures are applied.\n" +
+                "So level 1 is applied to Hades, instead of Meg/The Furies.\n" +
+                "For a more balanced experience.");
+        revEmBox.setEnabled(true);
+        greekBox.setToggle(true);
+        greekBox.setHint("Ignore deaths on Greece for deathlink.\nLeave off for the memes.");
+        greekBox.setEnabled(true);
+        hintBox.setToggle(true);
+        hintBox.setHint("Store displays what each item is in the multiworld before purchase.");
+        hintBox.setEnabled(true);
+        roomBox.setToggle(false);
+        roomBox.setHint("When enabled, defeating Hades gives all room clears in Rooms mode or\n" +
+                "all room clears for current weapon in Rooms & Weapons mode");
+        roomBox.setEnabled(true);
+        deathBox.setToggle(false);
+        deathBox.setHint("If you die in the game, everyone else (who has death link) dies in the game.\n" +
+                "Also, if they die you die. It's kind of poetic in a way.");
+        deathBox.setEnabled(true);
+
+        //Non-Box Items
+        JButton helpButton = new JButton();
+        helpButton.setAction(onHelpButtonClicked());
+        helpButton.setText("Edit Help Item distribution");
+        helpButton.setEnabled(true);
+
+        //Put it all together
+        vBox1.add(nameBox.box());
+        vBox1.add(descBox.box());
+        vBox1.add(balBox.box());
+        vBox1.add(accBox.box());
+        vBox1.add(startBox.box());
+        vBox1.add(locBox.box());
+        vBox1.add(scoreBox.box());
+        vBox1.add(saneBox.box());
+        vBox1.add(keepBox.box());
+        vBox1.add(weapBox.box());
+        vBox1.add(aspBox.box());
+        vBox1.add(shopBox.box());
+        vBox1.add(fateBox.box());
+        vBox1.add(hellBox.box());
+        vBox1.add(clearBox.box());
+        vBox1.add(sakeBox.box());
+        vBox1.add(listBox.box());
+        vBox1.add(hotBox.box());
+        vBox1.add(helpBox.box());
+        vBox1.add(helpButton);
+        vBox1.add(trapBox.box());
+        vBox1.add(revEmBox.box());
+        vBox1.add(greekBox.box());
+        vBox1.add(hintBox.box());
+        vBox1.add(roomBox.box());
+        vBox1.add(deathBox.box());
+
+        frame.add(vBox1);
     }
 
-    private Action onLocationSystemSelected(OptBox locBox, OptBox scoreBox){
+    private static  void openHelpFrame(){
+        //Box config
+        maxHealthBox.setSlide(0, 100, 40);
+        maxHealthBox.setHint("% of help items that boost your max health");
+        maxHealthBox.setEnabled(true);
+        initMoneyBox.setSlide(0, 100, 30);
+        initMoneyBox.setHint("% of help items that boost your initial money per run");
+        initMoneyBox.setEnabled(true);
+
+        //other items
+        JLabel boonLabel = new JLabel();
+
+        //Slider Logic
+        maxHealthBox.optSlide.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                JSlider sender = (JSlider) e.getSource();
+                if(initMoneyBox.optSlide.getValue() > (100 - sender.getValue())){
+                    initMoneyBox.optSlide.setValue(100 - sender.getValue());
+                }
+                boonLabel.setText("Boon Rarity Help Item Rate: " +
+                        (100 - sender.getValue() - initMoneyBox.optSlide.getValue()) + "%");
+            }
+        });
+        initMoneyBox.optSlide.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                JSlider sender = (JSlider) e.getSource();
+                if(maxHealthBox.optSlide.getValue() > (100 - sender.getValue())){
+                    maxHealthBox.optSlide.setValue(100 - sender.getValue());
+                }
+                boonLabel.setText("Boon Rarity Help Item Rate: " +
+                        (100 - sender.getValue() - maxHealthBox.optSlide.getValue()) + "%");
+            }
+        });
+        JFrame helpFrame = setUpFrame();
+        helpFrame.setTitle("Help Item Distribution Editor");
+        helpFrame.setSize(500, 500);
+
+        Box vBoxH = Box.createVerticalBox();
+        vBoxH.add(maxHealthBox.box());
+        vBoxH.add(initMoneyBox.box());
+        vBoxH.add(boonLabel);
+
+        helpFrame.add(vBoxH);
+        helpFrame.setVisible(true);
+
+
+    }
+
+    private static Action onLocationSystemSelected(){
         return new Action() {
             @Override
             public Object getValue(String key) {
@@ -207,5 +285,88 @@ public class OptWin {
             }
         };
 
+    }
+
+    private static Action onSanityRandomizationBoxClicked(){
+        return new Action() {
+            @Override
+            public Object getValue(String key) {
+                return null;
+            }
+
+            @Override
+            public void putValue(String key, Object value) {
+
+            }
+
+            @Override
+            public void setEnabled(boolean b) {
+
+            }
+
+            @Override
+            public boolean isEnabled() {
+                return false;
+            }
+
+            @Override
+            public void addPropertyChangeListener(PropertyChangeListener listener) {
+
+            }
+
+            @Override
+            public void removePropertyChangeListener(PropertyChangeListener listener) {
+
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                boolean notRandom = !saneBox.randBox.isSelected();
+                keepBox.setEnabled(notRandom);
+                weapBox.setEnabled(notRandom);
+                aspBox.setEnabled(notRandom);
+                shopBox.setEnabled(notRandom);
+                fateBox.setEnabled(notRandom);
+            }
+        };
+    }
+
+    private static Action onHelpButtonClicked(){
+        return new Action() {
+            @Override
+            public Object getValue(String key) {
+                return null;
+            }
+
+            @Override
+            public void putValue(String key, Object value) {
+
+            }
+
+            @Override
+            public void setEnabled(boolean b) {
+
+            }
+
+            @Override
+            public boolean isEnabled() {
+                return false;
+            }
+
+            @Override
+            public void addPropertyChangeListener(PropertyChangeListener listener) {
+
+            }
+
+            @Override
+            public void removePropertyChangeListener(PropertyChangeListener listener) {
+
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                openHelpFrame();
+            }
+        };
     }
 }
